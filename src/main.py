@@ -20,55 +20,6 @@ def add_rounded(image):
     return alpha_image
 
 
-# 渐变
-def add_gradient(image, color=(0, 0, 0), alpha=255):
-    # 蒙版
-    draw = ImageDraw.Draw(image)
-
-    # 渐变
-    start_color = color + (alpha,)
-    end_color = color + (0,)
-    center = (image.size[0] // 2, image.size[1] // 2)
-    for y in range(image.size[1]):
-        for x in range(image.size[0]):
-            d = np.sqrt((x - center[0]) ** 2 + (y - center[1]) ** 2)
-            f = min(d / max(image.size), 1)
-            r = int(start_color[0] + (end_color[0] - start_color[0]) * f)
-            g = int(start_color[1] + (end_color[1] - start_color[1]) * f)
-            b = int(start_color[2] + (end_color[2] - start_color[2]) * f)
-            a = int(start_color[3] + (end_color[3] - start_color[3]) * f)
-            draw.point((x, y), fill=(r, g, b, a))
-
-    return image
-
-# 光晕
-def add_glow(image, color=(0, 0, 0), radius=10):
-    # 蒙版
-    width, height = image.size
-    glow = Image.new("RGBA", (width, height), (0, 0, 0, 0))
-    draw = ImageDraw.Draw(glow)
-
-    # 矩形
-    for i in range(radius):
-        # 计算渐变颜色
-        a = int(i * i * i / radius * 255)
-        # 绘制矩形
-        draw.rectangle(
-            [i + radius, i + radius, width - i - radius, height - i - radius],
-            outline=color + (a,),
-            width=1
-        )
-
-    # 高斯
-    glow = glow.filter(ImageFilter.GaussianBlur(radius // 2))
-
-    # 合并
-    glow_image = Image.alpha_composite(image, glow)
-    glow_image.save("../images/demo_5.png", format="PNG", optimize=True)
-
-    return glow_image
-
-
 # 阴影
 def add_shadow(image, background_color=(255,255,255,255), shadow_color=(0,0,0,32),  offset=(1, 1)):
     # 蒙版
@@ -79,11 +30,10 @@ def add_shadow(image, background_color=(255,255,255,255), shadow_color=(0,0,0,32
     shadow_image = Image.new(image.mode, (total_width, total_height), background_color)
 
     # 阴影
-    iterations=border
     shadow_left = border + max(offset[0], 0)
     shadow_top = border + max(offset[1], 0)
     shadow_image.paste(shadow_color, [shadow_left, shadow_top, shadow_left + image.size[0], shadow_top + image.size[1]])
-    for _ in range(iterations):
+    for _ in range(10):
         shadow_image = shadow_image.filter(ImageFilter.BLUR)
 
     # 圆角
@@ -136,7 +86,8 @@ rounded_image = add_rounded(small_image)
 background_color=(0,0,0,0)
 shadow_color=(0,0,0,255)
 offset=(1, 1)
-shadow_image = add_shadow(rounded_image,background_color,shadow_color,offset)
+#shadow_image = add_shadow(rounded_image,background_color,shadow_color,offset)
+shadow_image =rounded_image
 
 # 文字
 text_to_add = '@pnoker'
