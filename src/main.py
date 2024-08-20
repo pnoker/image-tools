@@ -33,7 +33,7 @@ def add_shadow(image, color=(255, 255, 255, 255)):
             [(0 + i, 0 + i), (background_image.width - i, background_image.height - i)],
             fill=(0, 0, 0, int(i / radius * 32)),
         )
-    background_image.filter(ImageFilter.GaussianBlur(radius=100 ))
+    background_image.filter(ImageFilter.GaussianBlur(radius=radius))
     background_image.paste(image, ((background_image.width - image.width) // 2, (background_image.height - image.height) // 2), image)
     return background_image
 
@@ -113,6 +113,7 @@ print(f"7. merge images: {(end7 - start7) * 1000} ms")
 # 保存
 start8 = time.time()
 final_image.convert('RGB').save("../images/demo_t.png", format="JPEG")
+#final_image.save("../images/demo_t.png", format="PNG")
 end8 = time.time()
 print(f"8. save images: {(end8 - start8) * 1000} ms")
 print(f"OK: {(end8 - start1) * 1000} ms")
