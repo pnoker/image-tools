@@ -1,6 +1,9 @@
-import numpy as np
-from PIL import Image, ImageDraw, ImageFilter,ImageFont
+import time
+
+from PIL import Image, ImageDraw, ImageFilter, ImageFont
 from PIL.Image import Resampling
+
+image_mode = 'RGBA'  # 图片模式
 
 
 # 圆角
@@ -10,93 +13,106 @@ def add_rounded(image):
     draw = ImageDraw.Draw(mask)
 
     # 圆角
-    radius=min(image.size)*0.01
+    radius = min(image.size) * 0.01
     draw.rounded_rectangle([(0, 0), image.size], radius=radius, fill=255)
 
     # 合并
-    alpha_image = Image.new('RGBA', image.size, (0, 0, 0, 0))
+    alpha_image = Image.new(image_mode, image.size, (0, 0, 0, 0))
     alpha_image.paste(image, mask=mask)
 
     return alpha_image
 
 
 # 阴影
-def add_shadow(image, background_color=(255,255,255,255), shadow_color=(0,0,0,32),  offset=(1, 1)):
-    # 蒙版
-    border = int(max(50,min(500,min(image.size)*0.1)))
-    print(f"shadow border: {border}px, image size: {image.size}")
-    total_width = image.size[0] + abs(offset[0]) + 2 * border
-    total_height = image.size[1] + abs(offset[1]) + 2 * border
-    shadow_image = Image.new(image.mode, (total_width, total_height), background_color)
+def add_shadow(image, color=(255, 255, 255, 255)):
+    radius = int(min(image.size) * 0.05)
+    background_image = Image.new("RGBA", (image.width + radius, image.height + radius), color)
+    drawing = ImageDraw.Draw(background_image)
+    for i in range(radius):
+        drawing.rectangle(
+            [(0 + i, 0 + i), (background_image.width - i, background_image.height - i)],
+            fill=(0, 0, 0, int(i / radius * 32)),
+        )
+    background_image.filter(ImageFilter.GaussianBlur(radius=100 ))
+    background_image.paste(image, ((background_image.width - image.width) // 2, (background_image.height - image.height) // 2), image)
+    return background_image
 
-    # 阴影
-    shadow_left = border + max(offset[0], 0)
-    shadow_top = border + max(offset[1], 0)
-    shadow_image.paste(shadow_color, [shadow_left, shadow_top, shadow_left + image.size[0], shadow_top + image.size[1]])
-    for _ in range(10):
-        shadow_image = shadow_image.filter(ImageFilter.BLUR)
-
-    # 圆角
-    shadow_image = add_rounded(shadow_image)
-
-    # 合并
-    shadow_image.paste(image, (border - min(offset[0], 0), border - min(offset[1], 0)))
-
-    return shadow_image
 
 # 文字
-def add_text(image, text, font_path=None,  text_color=(255, 255, 255)):
+def add_text(image, text, font='Herculanum.ttf', color=(255, 255, 255)):
     # 蒙版
     draw = ImageDraw.Draw(image)
-    
+
     # 字体
-    font_size= min(image.size)*0.04
-    if font_path:
-        font = ImageFont.truetype(font_path, font_size)
+    font_size = int(min(image.size) * 0.03)
+    if font:
+        font = ImageFont.truetype(font, font_size)
     else:
         font = ImageFont.load_default()
-    
-    # 居中
-    text_bbox = draw.textbbox((0, 0), text, font=font)
-    text_width = text_bbox[2] - text_bbox[0]
-    text_height = text_bbox[3] - text_bbox[1]
-    image_width, image_height = image.size
-    position = ((image_width - text_width) // 2, (image_height*0.9+(image_height*0.1 - text_height) // 2))
-    
+
+    # 定位
+    text1_bbox = draw.textbbox((0, 0), text, font=font)
+    text_width = text1_bbox[2] - text1_bbox[0]
+    text_height = text1_bbox[3] - text1_bbox[1]
+    position1 = ((image.width - text_width) // 2, (image.height - text_height * 2))
+
     # 文字
-    draw.text(position, text, fill=text_color, font=font)
-    
-    return image
+    draw.text(position1, text, fill=color, font=font)
+
 
 # 打开图片
-original_image = Image.open("../images/IMG_0379.jpg").convert("RGBA")
+start1 = time.time()
+raw_image_path = '../images/IMG_0379.jpg'
+raw_image = Image.open(raw_image_path).convert(image_mode)
+end1 = time.time()
+print(f"1. open image: {(end1 - start1) * 1000} ms")
 
 # 高斯
+start2 = time.time()
 gaussian_blur = 50  # 模糊半径
-gaussian_image = original_image.filter(ImageFilter.GaussianBlur(gaussian_blur))
-
-# 缩小
-scale_factor = 0.8  # 缩小比例
-small_image = original_image.resize((int(original_image.width * scale_factor), int(original_image.height * scale_factor)), Resampling.LANCZOS)
-
-# 圆角
-rounded_image = add_rounded(small_image)
-
-# 阴影
-background_color=(0,0,0,0)
-shadow_color=(0,0,0,255)
-offset=(1, 1)
-#shadow_image = add_shadow(rounded_image,background_color,shadow_color,offset)
-shadow_image =rounded_image
+final_image = raw_image.filter(ImageFilter.GaussianBlur(gaussian_blur))
+end2 = time.time()
+print(f"2. add gaussian blur: {(end2 - start2) * 1000} ms")
 
 # 文字
-text_to_add = '@pnoker'
-font_path = 'Arial.ttf'
-text_color=(255, 255, 255)
-text_image=add_text(shadow_image,text_to_add,font_path,text_color)
+start3 = time.time()
+text_content = '@pnoker'
+add_text(final_image, text_content)
+end3 = time.time()
+print(f"3. add text: {(end3 - start3) * 1000} ms")
+
+# 缩小
+start4 = time.time()
+scale_factor = 0.88  # 缩小比例
+small_image = raw_image.resize((int(raw_image.width * scale_factor), int(raw_image.height * scale_factor)), Resampling.LANCZOS)
+end4 = time.time()
+print(f"4. resize image to {scale_factor * 100}%: {(end4 - start4) * 1000} ms")
+
+# 圆角
+start5 = time.time()
+rounded_image = add_rounded(small_image)
+end5 = time.time()
+print(f"5. add rounded: {(end5 - start5) * 1000} ms")
+
+# 阴影
+start6 = time.time()
+background_color = (0, 0, 0, 0)
+shadow_color = (0, 0, 0, 255)
+offset = (1, 1)
+shadow_image = add_shadow(rounded_image, background_color)
+# shadow_image = rounded_image
+end6 = time.time()
+print(f"6. add shadow: {(end6 - start6) * 1000} ms")
 
 # 合并
-gaussian_image.paste(text_image, ((gaussian_image.width - text_image.width) // 2, (gaussian_image.height - text_image.height) // 3), text_image)
+start7 = time.time()
+final_image.paste(shadow_image, ((final_image.width - shadow_image.width) // 2, (final_image.height - shadow_image.height) // 3), shadow_image)
+end7 = time.time()
+print(f"7. merge images: {(end7 - start7) * 1000} ms")
 
 # 保存
-gaussian_image.save("../images/demo_t.png", format="PNG", optimize=True)
+start8 = time.time()
+final_image.convert('RGB').save("../images/demo_t.png", format="JPEG")
+end8 = time.time()
+print(f"8. save images: {(end8 - start8) * 1000} ms")
+print(f"OK: {(end8 - start1) * 1000} ms")
