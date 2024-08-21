@@ -1,9 +1,11 @@
 import time
 
+import numpy
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 from PIL.Image import Resampling
 
 image_mode = "RGBA"  # 图片模式
+image_scale = 0.88  # 缩小比例
 
 
 # 圆角
@@ -17,59 +19,58 @@ def add_rounded(image):
     draw.rounded_rectangle([(0, 0), image.size], radius=radius, fill=255)
 
     # 合并
-    rounded_image = Image.new(image_mode, image.size, (0, 0, 0, 0))
-    rounded_image.paste(image, mask=mask)
+    temp_image = Image.new(image_mode, image.size, (0, 0, 0, 0))
+    temp_image.paste(image, mask=mask)
 
-    return rounded_image
+    return temp_image
 
 
 # 阴影
 def add_shadow(image, color=(255, 255, 255, 255)):
-    radius = int(min(image.size) * 0.04)
-    print(f"... shadow radius: {radius} px")
-    shadow_image = Image.new(
-        "RGBA", (image.width + radius, image.height + radius), color
+    shadow_radius = int(min(image.size) * 0.04)
+    rounded_radius = int(min(image.size) * 0.01)
+    print(f"... shadow radius: {shadow_radius} px")
+    temp_image = Image.new(
+        "RGBA", (image.width + shadow_radius, image.height + shadow_radius), color
     )
-    drawing = ImageDraw.Draw(shadow_image)
-    a = 200 / (radius * radius)
-    for i in range(radius):
+    drawing = ImageDraw.Draw(temp_image)
+    a = 200 / numpy.square(shadow_radius)
+    for i in range(shadow_radius):
         drawing.rounded_rectangle(
-            [(0 + i, 0 + i), (shadow_image.width - i, shadow_image.height - i)],
-            radius=radius / 4,
-            fill=(0, 0, 0, int(i * i * a)),
+            [(0 + i, 0 + i), (temp_image.width - i, temp_image.height - i)],
+            radius=rounded_radius,
+            fill=(0, 0, 0, int(numpy.square(i) * a)),
         )
-    shadow_image.filter(ImageFilter.GaussianBlur(radius=radius))
-    shadow_image.paste(
+    temp_image.filter(ImageFilter.GaussianBlur(radius=shadow_radius))
+    temp_image.paste(
         image,
         (
-            (shadow_image.width - image.width) // 2,
-            (shadow_image.height - image.height) // 2,
+            (temp_image.width - image.width) // 2,
+            (temp_image.height - image.height) // 2,
         ),
         image,
     )
-    return shadow_image
+    return temp_image
 
 
 # 文字
-def add_text(image, text, font="Herculanum.ttf", color=(255, 255, 255)):
+def add_text(image, text, color=(255, 255, 255)):
     # 蒙版
     draw = ImageDraw.Draw(image)
 
-    # 字体
-    font_size = int(min(image.size) * 0.02)
-    if font:
-        font = ImageFont.truetype(font, font_size)
-    else:
-        font = ImageFont.load_default()
+    # 标题
+    font_size = int(image.height * (1 - image_scale) * 0.2)
+    font_path = ImageFont.truetype('Canon.ttf', font_size)
 
     # 定位
-    text1_bbox = draw.textbbox((0, 0), text, font=font)
-    text_width = text1_bbox[2] - text1_bbox[0]
-    text_height = text1_bbox[3] - text1_bbox[1]
-    position1 = ((image.width - text_width) // 2, (image.height - text_height * 2))
+    text_bbox = draw.textbbox((0, 0), text, font=font_path, font_size=font_size)
+    text_width, text_height = text_bbox[2] - text_bbox[0], text_bbox[3] - text_bbox[1]
+    height_base = image.height * (1 - image_scale) / 3 + image.height * image_scale
+    height_index = (image.height - height_base - text_height) // 2
+    position = ((image.width - text_width) // 2, height_base + height_index)
 
     # 文字
-    draw.text(position1, text, fill=color, font=font)
+    draw.text(position, text, fill=color, font=font_path)
 
 
 # 打开图片
@@ -88,21 +89,19 @@ print(f"2. add gaussian blur: {(end2 - start2) * 1000} ms")
 
 # 文字
 start3 = time.time()
-text_content = "@pnoker"
-text_font = "Herculanum.ttf"
-add_text(final_image, text_content, text_font)
+text_content = "Canon @ pnoker"
+add_text(final_image, text_content)
 end3 = time.time()
 print(f"3. add text: {(end3 - start3) * 1000} ms")
 
 # 缩小
 start4 = time.time()
-scale_factor = 0.88  # 缩小比例
 small_image = raw_image.resize(
-    (int(raw_image.width * scale_factor), int(raw_image.height * scale_factor)),
+    (int(raw_image.width * image_scale), int(raw_image.height * image_scale)),
     Resampling.LANCZOS,
 )
 end4 = time.time()
-print(f"4. resize image to {scale_factor * 100}%: {(end4 - start4) * 1000} ms")
+print(f"4. resize image to {image_scale * 100}%: {(end4 - start4) * 1000} ms")
 
 # 圆角
 start5 = time.time()
