@@ -1,17 +1,19 @@
+import sys
 import time
+from pathlib import Path
 
 import numpy
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 from PIL.Image import Resampling
 
-image_mode = "RGBA"  # 图片模式
+image_mode = 'RGBA'  # 图片模式
 image_scale = 0.88  # 缩小比例
 
 
 # 圆角
 def add_rounded(image):
     # 蒙版
-    mask = Image.new("L", image.size, color=0)
+    mask = Image.new('L', image.size, color=0)
     draw = ImageDraw.Draw(mask)
 
     # 圆角
@@ -29,9 +31,8 @@ def add_rounded(image):
 def add_shadow(image, color=(255, 255, 255, 255)):
     shadow_radius = int(min(image.size) * 0.04)
     rounded_radius = int(min(image.size) * 0.01)
-    print(f"... shadow radius: {shadow_radius} px")
     temp_image = Image.new(
-        "RGBA", (image.width + shadow_radius, image.height + shadow_radius), color
+        image_mode, (image.width + shadow_radius, image.height + shadow_radius), color
     )
     drawing = ImageDraw.Draw(temp_image)
     a = 200 / numpy.square(shadow_radius)
@@ -73,69 +74,75 @@ def add_text(image, text, color=(255, 255, 255)):
     draw.text(position, text, fill=color, font=font_path)
 
 
-# 打开图片
-start1 = time.time()
-raw_image_path = "images/IMG_1085.jpg"
-raw_image = Image.open(raw_image_path).convert(image_mode)
-end1 = time.time()
-print(f"1. open image: {(end1 - start1) * 1000} ms")
+def main(arg):
+    # 打开图片
+    start1 = time.time()
+    image_path = arg
+    raw_image = Image.open(image_path).convert(image_mode)
+    end1 = time.time()
+    print(f'1. open image {arg}: {(end1 - start1) * 1000} ms')
 
-# 高斯
-start2 = time.time()
-gaussian_blur = 100  # 模糊半径
-final_image = raw_image.filter(ImageFilter.GaussianBlur(gaussian_blur))
-end2 = time.time()
-print(f"2. add gaussian blur: {(end2 - start2) * 1000} ms")
+    # 高斯
+    start2 = time.time()
+    gaussian_blur = 100  # 模糊半径
+    final_image = raw_image.filter(ImageFilter.GaussianBlur(gaussian_blur))
+    end2 = time.time()
+    print(f'2. add gaussian blur: {(end2 - start2) * 1000} ms')
 
-# 文字
-start3 = time.time()
-text_content = "Canon @ pnoker"
-add_text(final_image, text_content)
-end3 = time.time()
-print(f"3. add text: {(end3 - start3) * 1000} ms")
+    # 文字
+    start3 = time.time()
+    text_content = 'Canon @ pnoker'
+    add_text(final_image, text_content)
+    end3 = time.time()
+    print(f'3. add text: {(end3 - start3) * 1000} ms')
 
-# 缩小
-start4 = time.time()
-small_image = raw_image.resize(
-    (int(raw_image.width * image_scale), int(raw_image.height * image_scale)),
-    Resampling.LANCZOS,
-)
-end4 = time.time()
-print(f"4. resize image to {image_scale * 100}%: {(end4 - start4) * 1000} ms")
+    # 缩小
+    start4 = time.time()
+    small_image = raw_image.resize(
+        (int(raw_image.width * image_scale), int(raw_image.height * image_scale)),
+        Resampling.LANCZOS,
+    )
+    end4 = time.time()
+    print(f'4. resize image to {image_scale * 100}%: {(end4 - start4) * 1000} ms')
 
-# 圆角
-start5 = time.time()
-rounded_image = add_rounded(small_image)
-end5 = time.time()
-print(f"5. add rounded: {(end5 - start5) * 1000} ms")
+    # 圆角
+    start5 = time.time()
+    rounded_image = add_rounded(small_image)
+    end5 = time.time()
+    print(f'5. add rounded: {(end5 - start5) * 1000} ms')
 
-# 阴影
-start6 = time.time()
-background_color = (0, 0, 0, 0)
-shadow_color = (0, 0, 0, 255)
-offset = (1, 1)
-shadow_image = add_shadow(rounded_image, background_color)
-# shadow_image = rounded_image
-end6 = time.time()
-print(f"6. add shadow: {(end6 - start6) * 1000} ms")
+    # 阴影
+    start6 = time.time()
+    background_color = (0, 0, 0, 0)
+    shadow_color = (0, 0, 0, 255)
+    offset = (1, 1)
+    shadow_image = add_shadow(rounded_image, background_color)
+    end6 = time.time()
+    print(f'6. add shadow: {(end6 - start6) * 1000} ms')
 
-# 合并
-start7 = time.time()
-final_image.paste(
-    shadow_image,
-    (
-        (final_image.width - shadow_image.width) // 2,
-        (final_image.height - shadow_image.height) // 3,
-    ),
-    shadow_image,
-)
-end7 = time.time()
-print(f"7. merge images: {(end7 - start7) * 1000} ms")
+    # 合并
+    start7 = time.time()
+    final_image.paste(
+        shadow_image,
+        (
+            (final_image.width - shadow_image.width) // 2,
+            (final_image.height - shadow_image.height) // 3,
+        ),
+        shadow_image,
+    )
+    end7 = time.time()
+    print(f'7. merge images: {(end7 - start7) * 1000} ms')
 
-# 保存
-start8 = time.time()
-final_image.convert("RGB").save("images/demo_t.png", format="JPEG")
-# final_image.save("../images/demo_t.png", format="PNG")
-end8 = time.time()
-print(f"8. save images: {(end8 - start8) * 1000} ms")
-print(f"OK: {(end8 - start1) * 1000} ms")
+    # 保存
+    start8 = time.time()
+    path = Path(image_path)
+    final_image.convert('RGB').save(path.with_name(path.stem + '_S.jpeg'), format='JPEG')
+    end8 = time.time()
+    print(f'8. save images: {(end8 - start8) * 1000} ms')
+    print(f'OK: {(end8 - start1) * 1000} ms')
+
+
+if __name__ == "__main__":
+    args = sys.argv[1:]
+    for arg in args:
+        main(arg)
