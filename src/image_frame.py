@@ -142,6 +142,7 @@ def main(arg):
     print(f'OK: {(end8 - start1) * 1000} ms')
 
 
+# pyinstaller --distpath ./output/dist --workpath ./output/build your_script.py
 if __name__ == "__main__":
     args = sys.argv[1:]
     for arg in args:
