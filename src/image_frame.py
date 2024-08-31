@@ -17,7 +17,7 @@ def add_rounded(image):
     draw = ImageDraw.Draw(mask)
 
     # 圆角
-    radius = min(image.size) * 0.01
+    radius = min(image.size) * 0.03
     draw.rounded_rectangle([(0, 0), image.size], radius=radius, fill=255)
 
     # 合并
@@ -29,8 +29,8 @@ def add_rounded(image):
 
 # 阴影
 def add_shadow(image, color=(255, 255, 255, 255)):
-    shadow_radius = int(min(image.size) * 0.04)
-    rounded_radius = int(min(image.size) * 0.01)
+    shadow_radius = int(min(image.size) * 0.1)
+    rounded_radius = int(min(image.size) * 0.03)
     temp_image = Image.new(
         image_mode, (image.width + shadow_radius, image.height + shadow_radius), color
     )
