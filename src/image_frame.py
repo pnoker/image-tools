@@ -80,21 +80,21 @@ def main(arg):
     image_path = arg
     raw_image = Image.open(image_path).convert(image_mode)
     end1 = time.time()
-    print(f'1. open image {arg}: {(end1 - start1) * 1000} ms')
+    print(f'1. open image {arg}: {round((end1 - start1), 2) * 1000} ms')
 
     # 高斯
     start2 = time.time()
     gaussian_blur = 100  # 模糊半径
     final_image = raw_image.filter(ImageFilter.GaussianBlur(gaussian_blur))
     end2 = time.time()
-    print(f'2. add gaussian blur: {(end2 - start2) * 1000} ms')
+    print(f'2. add gaussian blur: {round((end2 - start2), 2) * 1000} ms')
 
     # 文字
     start3 = time.time()
     text_content = 'Canon @ pnoker'
     add_text(final_image, text_content)
     end3 = time.time()
-    print(f'3. add text: {(end3 - start3) * 1000} ms')
+    print(f'3. add text: {round((end3 - start3), 2) * 1000} ms')
 
     # 缩小
     start4 = time.time()
@@ -103,13 +103,13 @@ def main(arg):
         Resampling.LANCZOS,
     )
     end4 = time.time()
-    print(f'4. resize image to {image_scale * 100}%: {(end4 - start4) * 1000} ms')
+    print(f'4. resize image to {image_scale * 100}%: {round((end4 - start4), 2) * 1000} ms')
 
     # 圆角
     start5 = time.time()
     rounded_image = add_rounded(small_image)
     end5 = time.time()
-    print(f'5. add rounded: {(end5 - start5) * 1000} ms')
+    print(f'5. add rounded: {round((end5 - start5), 2) * 1000} ms')
 
     # 阴影
     start6 = time.time()
@@ -118,7 +118,7 @@ def main(arg):
     offset = (1, 1)
     shadow_image = add_shadow(rounded_image, background_color)
     end6 = time.time()
-    print(f'6. add shadow: {(end6 - start6) * 1000} ms')
+    print(f'6. add shadow: {round((end6 - start6), 2) * 1000} ms')
 
     # 合并
     start7 = time.time()
@@ -131,19 +131,22 @@ def main(arg):
         shadow_image,
     )
     end7 = time.time()
-    print(f'7. merge images: {(end7 - start7) * 1000} ms')
+    print(f'7. merge images: {round((end7 - start7), 2) * 1000} ms')
 
     # 保存
     start8 = time.time()
     path = Path(image_path)
     final_image.convert('RGB').save(path.with_name(path.stem + '_S.jpeg'), format='JPEG')
     end8 = time.time()
-    print(f'8. save images: {(end8 - start8) * 1000} ms')
-    print(f'OK: {(end8 - start1) * 1000} ms')
+    print(f'8. save images: {round((end8 - start8), 2) * 1000} ms')
+    print(f'OK: {round((end8 - start1), 2) * 1000} ms')
 
 
 # pyinstaller --distpath ./output/dist --workpath ./output/build your_script.py
 if __name__ == "__main__":
     args = sys.argv[1:]
+    if len(args) < 1:
+        print(f'Please enter the image source file to be processed')
+
     for arg in args:
         main(arg)

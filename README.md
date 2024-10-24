@@ -10,3 +10,11 @@ Whether you’re looking to enhance image quality or save time, this tool is you
 ![IMG_0379_S.jpeg](demo/IMG_0379_S.jpeg)
 ![IMG_0379_S.jpeg](demo/IMG_1085_S.jpeg)
 ![IMG_0379_S.jpeg](demo/IMG_2680_S.jpeg)
+
+# Installer
+
+```bash
+ pip install pyinstaller
+ 
+ pyinstaller --onefile src/image_frame.py
+```
