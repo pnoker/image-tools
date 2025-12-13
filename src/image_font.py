@@ -37,7 +37,7 @@ def main():
 
 
 if __name__ == "__main__":
-    text_list = ["张晓华", "陈沅", "郝丽平", "李嘉欣", "李彦魁", "罗青", "邵汀潇", "王灿发", "王莹", "谢永恒", "翟雅娴"]
+    text_list = ["宋英"]
     for idx, txt in enumerate(text_list):
         x_pos = "177" if len(txt) == 3 else "188"
         sys.argv = [
@@ -48,6 +48,6 @@ if __name__ == "__main__":
             "--y", "707",
             "--font", "/Users/pnoker/Library/Fonts/WangZhi-KuaiXueShiQingTie.ttf",
             "--size", "25",
-            "--output", f"5组/{txt}.png"
+            "--output", f"1组/{txt}.png"
         ]
         main()
